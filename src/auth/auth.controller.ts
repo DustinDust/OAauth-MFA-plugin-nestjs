@@ -1,4 +1,5 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -11,7 +12,12 @@ export class AuthController {
   constructor(
     private jwtService: JwtService,
     private authService: AuthService,
+    private configService: ConfigService,
   ) {}
+
+  get jwtSecret() {
+    return this.configService.get('JWT_SECRET');
+  }
 
   @Get('google/login')
   @UseGuards(GoogleGuard)
@@ -35,7 +41,7 @@ export class AuthController {
         userId: req.user.profile.id,
       },
       {
-        secret: 'JWTSecretKey',
+        secret: this.jwtSecret,
       },
     );
     res.cookie('jwt', jwt);
@@ -58,7 +64,7 @@ export class AuthController {
         userId: req.user.profile.id,
       },
       {
-        secret: 'JWTSecretKey',
+        secret: this.jwtSecret,
       },
     );
     res.cookie('jwt', jwt);

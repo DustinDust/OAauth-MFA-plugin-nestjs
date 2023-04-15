@@ -11,13 +11,6 @@ export class GoogleStrategy extends PassportStrategy(
 ) {
   constructor(clsService: ClsService) {
     super(clsService.get('googleProviderOptions'));
-    // super({
-    //   clientID:
-    //     '527158108169-ocok1u080nt9thrum0trnu2g011cakb8.apps.googleusercontent.com',
-    //   clientSecret: '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',
-    //   callbackURL: 'http://localhost:5173/api/auth/google/callback',
-    //   scope: 'openid email profile',
-    // });
     console.log('google strat run');
   }
   async validate(accessToken: string, refreshToken: string, profile: Profile) {

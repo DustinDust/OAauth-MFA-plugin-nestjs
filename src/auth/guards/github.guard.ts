@@ -12,7 +12,10 @@ export class GithubGuard extends AuthGuard('github-oauth') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    if (!this.clsService.get('willAuthenticate')) {
+    if (
+      !this.clsService.get('willAuthenticate') ||
+      !this.clsService.get('githubProviderOptions').active
+    ) {
       return true;
     } else return super.canActivate(context);
   }

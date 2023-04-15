@@ -4,7 +4,8 @@ export interface IClsStore {
   githubProviderOptions: IProviderOptions;
 }
 
-interface IProviderOptions {
+export interface IProviderOptions {
+  active: string;
   clientID: string;
   clientSecret: string;
   callbackURL: string;

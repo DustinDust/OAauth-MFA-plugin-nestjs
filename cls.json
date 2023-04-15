@@ -1,15 +1,1 @@
-{
-	"willAuthenticate": true,
-	"githubProviderOptions": {
-		"clientID": "1827e2b0a178598e180f",
-    "clientSecret": "164689da5dda4f4d6cf8c441ea24c56b83cf37f6",
-    "callbackURL": "http://localhost:5173/api/auth/github/callback"
-	},
-	"googleProviderOptions": {
-		 "clientID":
-        "527158108169-ocok1u080nt9thrum0trnu2g011cakb8.apps.googleusercontent.com",
-      "clientSecret": "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",
-      "callbackURL": "http://localhost:5173/api/auth/google/callback",
-      "scope": "openid email profile"
-	}
-}
+{"willAuthenticate":true,"githubProviderOptions":{"active":true,"clientID":"1827e2b0a178598e180f","clientSecret":"164689da5dda4f4d6cf8c441ea24c56b83cf37f6","callbackURL":"http://localhost:5173/api/auth/github/callback"},"googleProviderOptions":{"active":true,"clientID":"527158108169-ocok1u080nt9thrum0trnu2g011cakb8.apps.googleusercontent.com","clientSecret":"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","callbackURL":"http://localhost:5173/api/auth/google/callback","scope":"openid email profile"}}

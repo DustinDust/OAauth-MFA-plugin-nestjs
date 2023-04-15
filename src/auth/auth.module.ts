@@ -1,8 +1,10 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { ClsModule, ClsService } from 'nestjs-cls';
 import { RequestScopeModule } from 'nj-request-scope';
+import { Config } from 'prettier';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthConfigController } from './auto-config.controller';
@@ -72,7 +74,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     GithubGuard,
     GoogleGuard,
     JwtGuard,
-    JwtStrategy,
+    {
+      provide: 'JWT_STRATEGY',
+      useFactory: (configService: ConfigService) => {
+        return new JwtStrategy(configService);
+      },
+      inject: [ConfigService],
+    },
     AuthService,
   ],
 })

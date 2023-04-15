@@ -12,7 +12,10 @@ export class GoogleGuard extends AuthGuard('google-oauth') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    if (!this.clsService.get('willAuthenticate')) {
+    if (
+      !this.clsService.get('willAuthenticate') ||
+      !this.clsService.get('googleProviderOptions').active
+    ) {
       return true;
     } else {
       return super.canActivate(context);
