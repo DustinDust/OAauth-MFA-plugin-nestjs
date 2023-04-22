@@ -1,13 +1,10 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { RequestScope } from 'nj-request-scope';
 
 @Injectable()
 export class AuthService {
   GITHUB_USER_ENDPOINT = 'https://api.github.com/user';
   GOOGLE_USER_ENDPOINT = 'https://www.googleapis.com/oauth2/v1/userinfo';
-  constructor(private readonly httpService: HttpService) {}
   async getUserInfo(accessToken: string, provider: 'google' | 'github') {
     if (provider === 'github') {
       const res = await axios.get(this.GITHUB_USER_ENDPOINT, {

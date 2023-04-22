@@ -1,20 +1,48 @@
-import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ClsService, InjectableProxy } from 'nestjs-cls';
 import { Strategy } from 'passport-github2';
-import { Profile } from 'passport-google-oauth';
+import { Profile } from 'passport-github2';
+import { UserService } from 'src/user/user.service';
 
 @InjectableProxy()
 export class GithubStrategy extends PassportStrategy(Strategy, 'github-oauth') {
-  constructor(clsService: ClsService) {
+  userService: UserService;
+  constructor(clsService: ClsService, userSevice: UserService) {
     super(clsService.get('githubProviderOptions'));
     console.log('github strat run');
+    this.userService = userSevice;
   }
   async validate(accessToken: string, refreshToken: string, profile: Profile) {
-    return {
-      accessToken,
-      refreshToken,
-      profile,
-    };
+    const currentUser = await this.userService.findUserByProviderId(
+      profile.id,
+      profile.provider,
+    );
+    console.log(profile);
+    if (currentUser) {
+      return {
+        userId: currentUser._id.toString(),
+        accessToken,
+        refreshToken,
+        profile,
+      };
+    } else {
+      // link them
+      const newUser = await this.userService.createUser({
+        displayName: profile.displayName,
+        email: profile.profileUrl,
+        photo: profile.photos[0].value,
+      });
+      await this.userService.linkProvider(newUser._id.toString(), {
+        id: profile.id,
+        name: 'github',
+        token: accessToken,
+      });
+      return {
+        userId: newUser._id,
+        accessToken,
+        refreshToken,
+        profile,
+      };
+    }
   }
 }

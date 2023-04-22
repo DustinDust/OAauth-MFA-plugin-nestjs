@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { ClsModule, ClsService } from 'nestjs-cls';
 import { RequestScopeModule } from 'nj-request-scope';
-import { Config } from 'prettier';
+import { UserModule } from 'src/user/user.module';
+import { UserService } from 'src/user/user.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthConfigController } from './auto-config.controller';
@@ -15,62 +16,31 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
-// const GoogleStrategyFactory = {
-//   provide: 'GOOGLE_OIDC_FACTORY',
-//   useFactory: async () => {
-//     const issuer = await Issuer.discover(
-//       'https://accounts.google.com/.well-known/openid-configuration',
-//     );
-//     console.log(issuer);
-//     const client = new issuer.Client({
-//       client_id:
-//         '527158108169-ocok1u080nt9thrum0trnu2g011cakb8.apps.googleusercontent.com',
-//       client_secret: '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',
-//     });
-//   },
-// };
-
-// const GithubStrategyFactory = {
-//   provide: 'GITHUB_OIDC_FACTORY',
-//   useFactory: async () => {
-//     const issuer = new Issuer({
-//       issuer: 'https://github.com',
-//       authorization_endpoint: 'https://github.com/login/oauth/authorize',
-//       token_endpoint: 'https://github.com/login/oauth/access_token',
-//       userinfo_endpoint: 'https://api.github.com/user',
-//     });
-//     console.log(issuer);
-//     const client = new issuer.Client({
-//       client_id: '1827e2b0a178598e180f',
-//       client_secret: '164689da5dda4f4d6cf8c441ea24c56b83cf37f6',
-//     });
-//   },
-// };
-
 @Module({
   imports: [
+    UserModule,
     PassportModule.register({ session: false }),
     HttpModule.register({}),
     RequestScopeModule,
     ClsModule.forFeatureAsync({
       provide: 'GITHUB_STRATEGY',
-      useFactory: (clsService: ClsService) => {
-        return new GithubStrategy(clsService);
+      imports: [UserModule],
+      useFactory: (clsService: ClsService, userService: UserService) => {
+        return new GithubStrategy(clsService, userService);
       },
-      inject: [ClsService],
+      inject: [ClsService, UserService],
     }),
     ClsModule.forFeatureAsync({
       provide: 'GOOGLE_STRATEGY',
-      useFactory: (clsService: ClsService) => {
-        return new GoogleStrategy(clsService);
+      imports: [UserModule],
+      useFactory: (clsService: ClsService, userService: UserService) => {
+        return new GoogleStrategy(clsService, userService);
       },
-      inject: [ClsService],
+      inject: [ClsService, UserService],
     }),
   ],
   controllers: [AuthController, AuthConfigController],
   providers: [
-    // GithubStrategy,
-    // GoogleStrategy,
     GithubGuard,
     GoogleGuard,
     JwtGuard,

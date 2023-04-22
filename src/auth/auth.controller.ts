@@ -39,6 +39,7 @@ export class AuthController {
         accessToken: req.user.accessToken,
         provider: req.user.profile.provider,
         userId: req.user.profile.id,
+        mongoId: req.user.userId,
       },
       {
         secret: this.jwtSecret,
