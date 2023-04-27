@@ -2,6 +2,9 @@ name: push-&-pull
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, closed]
 
 jobs:
   test:
