@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { OtpInfo, OtpInfoSchema } from './schemas/otp-info.schema';
 import {
   ProviderInfo,
   ProviderInfoSchema,
@@ -12,6 +13,7 @@ import { UserService } from './user.service';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: ProviderInfo.name, schema: ProviderInfoSchema },
+      { name: OtpInfo.name, schema: OtpInfoSchema },
     ]),
   ],
   exports: [UserService],

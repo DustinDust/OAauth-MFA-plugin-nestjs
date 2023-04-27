@@ -1,18 +1,31 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
-import { AuthService } from './auth.service';
-import { GithubGuard } from './guards/github.guard';
-import { GoogleGuard } from './guards/google.guard';
-import { JwtGuard } from './guards/jwt.guard';
+import { AuthService } from '../services/auth.service';
+import { GithubGuard } from '../guards/github.guard';
+import { GoogleGuard } from '../guards/google.guard';
+import { JwtGuard } from '../guards/jwt.guard';
+import { ZodValidationPipe } from '@anatine/zod-nestjs';
+import { UserService } from 'src/user/user.service';
+import { IJWTClaims } from '../interfaces/jwt-claims.interface';
 
 @Controller('auth')
+@UsePipes(ZodValidationPipe)
 export class AuthController {
   constructor(
     private jwtService: JwtService,
     private authService: AuthService,
     private configService: ConfigService,
+    private userService: UserService,
   ) {}
 
   get jwtSecret() {
@@ -36,10 +49,7 @@ export class AuthController {
   ) {
     const jwt = await this.jwtService.signAsync(
       {
-        accessToken: req.user.accessToken,
-        provider: req.user.profile.provider,
-        userId: req.user.profile.id,
-        mongoId: req.user.userId,
+        id: req.user.userId,
       },
       {
         secret: this.jwtSecret,
@@ -60,9 +70,7 @@ export class AuthController {
   async githubCallback(@Res({ passthrough: true }) res: Response, @Req() req) {
     const jwt = await this.jwtService.signAsync(
       {
-        accessToken: req.user.accessToken,
-        provider: req.user.profile.provider,
-        userId: req.user.profile.id,
+        id: req.user.userId,
       },
       {
         secret: this.jwtSecret,
@@ -75,9 +83,12 @@ export class AuthController {
   @Get('test')
   @UseGuards(JwtGuard)
   async testJwtGuard(@Req() req) {
-    return await this.authService.getUserInfo(
-      req.user.accessToken,
-      req.user.provider,
+    const user = await this.userService.getUserById(
+      (req.user as IJWTClaims).id,
     );
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 }
