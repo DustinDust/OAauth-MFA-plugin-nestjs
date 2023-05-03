@@ -17,6 +17,9 @@ import { JwtGuard } from '../guards/jwt.guard';
 import { ZodValidationPipe } from '@anatine/zod-nestjs';
 import { UserService } from 'src/user/user.service';
 import { IJWTClaims } from '../interfaces/jwt-claims.interface';
+import { ClsService } from 'nestjs-cls';
+import { UserDocument } from 'src/user/schemas/user.schema';
+import { TwoFactorGuard } from '../guards/two-factor.guard';
 
 @Controller('auth')
 @UsePipes(ZodValidationPipe)
@@ -26,6 +29,7 @@ export class AuthController {
     private authService: AuthService,
     private configService: ConfigService,
     private userService: UserService,
+    private clsService: ClsService,
   ) {}
 
   get jwtSecret() {
@@ -47,16 +51,34 @@ export class AuthController {
     res: Response,
     @Req() req,
   ) {
+    const user = req.user.user as UserDocument;
     const jwt = await this.jwtService.signAsync(
       {
-        id: req.user.userId,
+        id: user._id,
+        is2FAuthenticated: false,
       },
       {
         secret: this.jwtSecret,
       },
     );
     res.cookie('jwt', jwt);
-    res.redirect('/');
+    if (this.clsService.get('mfaEnforce')) {
+      if (user.isOtpEnabled && user.otp) {
+        res.redirect(`/2fa/authenticate/${user._id}`);
+      } else if (!(user.otp && user.isOtpEnabled)) {
+        res.redirect(`/2fa/setup/${user._id}`);
+      }
+    } else {
+      if (user.isOtpEnabled) {
+        if (user.otp) {
+          res.redirect(`/2fa/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/2fa/setup/${user._id}`);
+        }
+      } else {
+        res.redirect('/');
+      }
+    }
   }
 
   @Get('github/login')
@@ -68,21 +90,42 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GithubGuard)
   async githubCallback(@Res({ passthrough: true }) res: Response, @Req() req) {
+    const user = req.user.user as UserDocument;
     const jwt = await this.jwtService.signAsync(
       {
-        id: req.user.userId,
+        id: user._id,
+        is2FAuthenticated: false,
       },
       {
         secret: this.jwtSecret,
       },
     );
     res.cookie('jwt', jwt);
-    res.redirect('/');
+    if (this.clsService.get('mfaEnforce')) {
+      if (user.otp) {
+        res.redirect(`/2fa/authenticate/${user._id}`);
+      } else {
+        res.redirect(`/2fa/setup/${user._id}`);
+      }
+    } else {
+      if (user.isOtpEnabled) {
+        if (user.otp) {
+          res.redirect(`/2fa/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/2fa/setup/${user._id}`);
+        }
+      } else {
+        res.redirect('/');
+      }
+    }
   }
 
   @Get('test')
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, TwoFactorGuard)
   async testJwtGuard(@Req() req) {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
     const user = await this.userService.getUserById(
       (req.user as IJWTClaims).id,
     );

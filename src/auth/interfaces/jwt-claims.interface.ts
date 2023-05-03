@@ -1,4 +1,4 @@
 export interface IJWTClaims {
   id: string;
-  [key: string]: string;
+  is2FAuthenticated: boolean;
 }

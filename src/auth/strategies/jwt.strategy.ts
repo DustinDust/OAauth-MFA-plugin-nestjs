@@ -11,7 +11,7 @@ function fromCookies(req: Request) {
   return token;
 }
 
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
     super({
       secretOrKey: configService.get('JWT_SECRET'),

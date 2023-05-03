@@ -20,7 +20,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github-oauth') {
     console.log(profile);
     if (currentUser) {
       return {
-        userId: currentUser._id.toString(),
+        user: currentUser,
         accessToken,
         refreshToken,
         profile,
@@ -38,7 +38,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github-oauth') {
         token: accessToken,
       });
       return {
-        userId: newUser._id,
+        user: newUser,
         accessToken,
         refreshToken,
         profile,

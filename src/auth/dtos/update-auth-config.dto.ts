@@ -11,6 +11,7 @@ const ProviderOptionsZ = z.object({
 
 export const UpdateAuthConfigZ = z.object({
   willAuthenticate: z.boolean(),
+  mfaEnforce: z.boolean(),
   githubProviderOptions: ProviderOptionsZ,
   googleProviderOptions: ProviderOptionsZ,
 });

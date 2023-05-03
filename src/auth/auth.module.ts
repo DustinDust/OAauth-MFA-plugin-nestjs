@@ -17,11 +17,19 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TwoFactorController } from './controllers/two-factor.controller';
 import { TwoFactorAuthenticationService } from './services/otp.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { TwoFactorGuard } from './guards/two-factor.guard';
+import { TwoFactorAuthStrategy } from './strategies/2fa.strategy';
 
 @Module({
   imports: [
     UserModule,
     PassportModule.register({ session: false }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'client'),
+      exclude: ['/api/(.*)'],
+    }),
     HttpModule.register({}),
     RequestScopeModule,
     ClsModule.forFeatureAsync({
@@ -46,6 +54,7 @@ import { TwoFactorAuthenticationService } from './services/otp.service';
     GithubGuard,
     GoogleGuard,
     JwtGuard,
+    TwoFactorGuard,
     {
       provide: 'JWT_STRATEGY',
       useFactory: (configService: ConfigService) => {
@@ -53,6 +62,7 @@ import { TwoFactorAuthenticationService } from './services/otp.service';
       },
       inject: [ConfigService],
     },
+    TwoFactorAuthStrategy,
     AuthService,
     TwoFactorAuthenticationService,
   ],

@@ -1,5 +1,6 @@
 export interface IClsStore {
   willAuthenticate: boolean;
+  mfaEnforce: boolean;
   googleProviderOptions: IProviderOptions;
   githubProviderOptions: IProviderOptions;
 }

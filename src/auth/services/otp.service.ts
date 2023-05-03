@@ -56,7 +56,11 @@ export class TwoFactorAuthenticationService {
   }
 
   async pipeQrCodeStream(stream: Response, otpAuthUrl: string) {
-    return toFileStream(stream, otpAuthUrl);
+    return toFileStream(stream, otpAuthUrl, {
+      type: 'png',
+      width: 200,
+      errorCorrectionLevel: 'H',
+    });
   }
 
   async verify(userId: string, token: string) {
@@ -65,5 +69,9 @@ export class TwoFactorAuthenticationService {
       token: token,
       secret: user.otp.secret,
     });
+  }
+
+  async disable2FAForUser(id: string) {
+    this.userService.disableOtp(id);
   }
 }
