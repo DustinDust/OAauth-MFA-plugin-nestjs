@@ -132,6 +132,7 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException();
     }
+    delete user.otp;
     return user;
   }
 }

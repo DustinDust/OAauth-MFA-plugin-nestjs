@@ -107,7 +107,7 @@ export class TwoFactorController {
     @Res() res: Response,
   ) {
     console.log(req.user);
-    const isValid = this.tfaService.verify(
+    const isValid = await this.tfaService.verify(
       (req.user as IJWTClaims).id,
       body.token,
     );
@@ -123,7 +123,6 @@ export class TwoFactorController {
         secret: this.configService.get('JWT_SECRET'),
       },
     );
-    console.log(accessTokenCookie);
     res.cookie('jwt', accessTokenCookie);
     res.send({
       user: req.user,

@@ -20,7 +20,7 @@ export class GoogleStrategy extends PassportStrategy(
       profile.id,
       profile.provider,
     );
-    console.log(currentUser);
+    // console.log(currentUser);
     if (currentUser) {
       return {
         user: currentUser,
@@ -40,7 +40,7 @@ export class GoogleStrategy extends PassportStrategy(
         name: 'google',
         token: accessToken,
       });
-      console.log(newUser);
+      // console.log(newUser);
       return {
         user: newUser,
         accessToken,
