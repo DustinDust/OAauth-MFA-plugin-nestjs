@@ -20,10 +20,10 @@ export class GoogleStrategy extends PassportStrategy(
       profile.id,
       profile.provider,
     );
-    console.log(currentUser);
+    // console.log(currentUser);
     if (currentUser) {
       return {
-        userId: currentUser._id.toString(),
+        user: currentUser,
         accessToken,
         refreshToken,
         profile,
@@ -40,8 +40,9 @@ export class GoogleStrategy extends PassportStrategy(
         name: 'google',
         token: accessToken,
       });
+      // console.log(newUser);
       return {
-        userId: newUser._id,
+        user: newUser,
         accessToken,
         refreshToken,
         profile,

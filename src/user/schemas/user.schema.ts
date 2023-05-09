@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { OtpInfo } from './otp-info.schema';
 import { ProviderInfo } from './provider-info.schema';
 
 export type UserDocument = HydratedDocument<User>;
@@ -20,8 +21,14 @@ export class User {
   })
   providers: ProviderInfo[];
 
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'OtpInfo',
+  })
+  otp: OtpInfo;
+
   @Prop()
-  hasOTP: boolean;
+  isOtpEnabled: boolean;
 
   @Prop()
   createdAt: string;

@@ -5,6 +5,7 @@ import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.z';
 import { ProviderInfo } from './schemas/provider-info.schema';
 import { CreateProviderInfoDto } from './dtos/create-provider-info.z';
+import { OtpInfo } from './schemas/otp-info.schema';
 
 @Injectable()
 export class UserService {
@@ -12,6 +13,7 @@ export class UserService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(ProviderInfo.name)
     private providerInfoModel: Model<ProviderInfo>,
+    @InjectModel(OtpInfo.name) private otpInfoModel: Model<OtpInfo>,
   ) {}
 
   async getUserById(id: string) {
@@ -19,6 +21,8 @@ export class UserService {
       .findOne({
         _id: id,
       })
+      .populate('otp')
+      .populate('providers')
       .exec();
     return us;
   }
@@ -39,6 +43,36 @@ export class UserService {
       user.providers = [...user.providers, newPvdI];
       await user.save();
     }
+  }
+
+  async updateOtpInfo(id: string, secret: string) {
+    const otpInfo = new this.otpInfoModel({
+      secret: secret,
+    });
+    await otpInfo.save();
+    return await this.userModel
+      .findByIdAndUpdate(id, {
+        $set: {
+          otp: otpInfo,
+        },
+      })
+      .exec();
+  }
+
+  async enableOtp(id: string) {
+    return await this.userModel.findByIdAndUpdate(id, {
+      $set: {
+        isOtpEnabled: true,
+      },
+    });
+  }
+
+  async disableOtp(id: string) {
+    return await this.userModel.findByIdAndUpdate(id, {
+      $set: {
+        isOtpEnabled: false,
+      },
+    });
   }
 
   async findUserByProviderId(id: string, provider: string) {

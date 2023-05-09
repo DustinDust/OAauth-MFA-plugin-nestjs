@@ -6,20 +6,30 @@ import { ClsModule, ClsService } from 'nestjs-cls';
 import { RequestScopeModule } from 'nj-request-scope';
 import { UserModule } from 'src/user/user.module';
 import { UserService } from 'src/user/user.service';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { AuthConfigController } from './auto-config.controller';
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
+import { AuthConfigController } from './controllers/auto-config.controller';
 import { GithubGuard } from './guards/github.guard';
 import { GoogleGuard } from './guards/google.guard';
 import { JwtGuard } from './guards/jwt.guard';
 import { GithubStrategy } from './strategies/github.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { TwoFactorController } from './controllers/two-factor.controller';
+import { TwoFactorAuthenticationService } from './services/otp.service';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { TwoFactorGuard } from './guards/two-factor.guard';
+import { TwoFactorAuthStrategy } from './strategies/2fa.strategy';
 
 @Module({
   imports: [
     UserModule,
     PassportModule.register({ session: false }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'client'),
+      exclude: ['/api/(.*)'],
+    }),
     HttpModule.register({}),
     RequestScopeModule,
     ClsModule.forFeatureAsync({
@@ -39,11 +49,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ClsService, UserService],
     }),
   ],
-  controllers: [AuthController, AuthConfigController],
+  controllers: [AuthController, AuthConfigController, TwoFactorController],
   providers: [
     GithubGuard,
     GoogleGuard,
     JwtGuard,
+    TwoFactorGuard,
     {
       provide: 'JWT_STRATEGY',
       useFactory: (configService: ConfigService) => {
@@ -51,7 +62,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       },
       inject: [ConfigService],
     },
+    TwoFactorAuthStrategy,
     AuthService,
+    TwoFactorAuthenticationService,
   ],
 })
 export class AuthModule {}

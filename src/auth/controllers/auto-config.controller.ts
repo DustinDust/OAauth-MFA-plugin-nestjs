@@ -1,15 +1,16 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UsePipes } from '@nestjs/common';
 import { LocalFileService } from 'src/common/local-file.service';
-import { UpdateAuthConfigDto } from './dto/update-auth-config.dto';
-import { IClsStore } from './interfaces/cls-store.interface';
+import { UpdateAuthConfigDto } from '../dtos/update-auth-config.dto';
+import { IClsStore } from '../interfaces/cls-store.interface';
 import { Redis } from 'ioredis';
 import { ConfigService } from '@nestjs/config';
+import { ZodValidationPipe } from '@anatine/zod-nestjs';
 
 @Controller({
   path: 'auth-config',
-  // host: 'localhost',
 })
+@UsePipes(ZodValidationPipe)
 export class AuthConfigController {
   constructor(
     private readonly localFileService: LocalFileService,

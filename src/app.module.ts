@@ -58,7 +58,7 @@ import { UserModule } from './user/user.module';
                   configService.get('REDIS_AUTH_CONFIG_KEY') || 'AUTH_CONFIG',
                   JSON.stringify(data),
                 );
-              console.log(data);
+              // console.log(data);
               for (const key in data) {
                 cls.set(key, data[key]);
               }
