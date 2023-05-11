@@ -48,7 +48,6 @@ export class TwoFactorController {
   @Get('qr')
   @UseGuards(JwtGuard)
   async getQr(@Req() req: Request, @Res() res: Response) {
-    console.log(req.user);
     const { otpAuthUrl } = await this.tfaService.getSecret(
       (req.user as IJWTClaims).id,
     );
@@ -58,7 +57,6 @@ export class TwoFactorController {
   @Get('generate')
   @UseGuards(JwtGuard)
   async setup2fa(@Res() res: Response, @Req() req: Request) {
-    console.log(req.user);
     const { otpAuthUrl } =
       await this.tfaService.generateTwoFactorAuthenticationSecret(
         (req.user as IJWTClaims).id,
@@ -91,7 +89,6 @@ export class TwoFactorController {
         secret: this.configService.get('JWT_SECRET'),
       },
     );
-    console.log(accessTokenCookie);
     res.cookie('jwt', accessTokenCookie);
     res.send({
       user: req.user,
@@ -106,7 +103,6 @@ export class TwoFactorController {
     @Body() body: Verify2FATokenDto,
     @Res() res: Response,
   ) {
-    console.log(req.user);
     const isValid = await this.tfaService.verify(
       (req.user as IJWTClaims).id,
       body.token,

@@ -17,7 +17,6 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github-oauth') {
       profile.id,
       profile.provider,
     );
-    // console.log(profile);
     if (currentUser) {
       return {
         user: currentUser,

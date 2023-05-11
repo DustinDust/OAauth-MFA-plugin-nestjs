@@ -6,6 +6,7 @@ import { IClsStore } from '../interfaces/cls-store.interface';
 import { Redis } from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import { ZodValidationPipe } from '@anatine/zod-nestjs';
+import { ClsService } from 'nestjs-cls';
 
 @Controller({
   path: 'auth-config',
@@ -16,6 +17,7 @@ export class AuthConfigController {
     private readonly localFileService: LocalFileService,
     @InjectRedis() private readonly redis: Redis,
     private configService: ConfigService,
+    private cls: ClsService,
   ) {}
 
   get redisAuthConfigKey() {
@@ -43,9 +45,7 @@ export class AuthConfigController {
 
   @Post()
   async updateConfigDetails(@Body() dto: UpdateAuthConfigDto) {
-    const currentConfig = await this.localFileService.dataFromFile<IClsStore>(
-      `${process.cwd()}/cls.json`,
-    );
+    const currentConfig = this.cls.get<IClsStore>();
     await this.localFileService.dataToFile(`${process.cwd()}/cls.json`, {
       ...currentConfig,
       ...dto,
