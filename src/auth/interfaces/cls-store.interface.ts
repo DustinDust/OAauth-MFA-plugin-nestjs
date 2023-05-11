@@ -6,7 +6,7 @@ export interface IClsStore {
 }
 
 export interface IProviderOptions {
-  active: string;
+  active: boolean;
   clientID: string;
   clientSecret: string;
   callbackURL: string;

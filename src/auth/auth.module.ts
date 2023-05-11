@@ -12,8 +12,6 @@ import { AuthConfigController } from './controllers/auto-config.controller';
 import { GithubGuard } from './guards/github.guard';
 import { GoogleGuard } from './guards/google.guard';
 import { JwtGuard } from './guards/jwt.guard';
-import { GithubStrategy } from './strategies/github.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TwoFactorController } from './controllers/two-factor.controller';
 import { TwoFactorAuthenticationService } from './services/otp.service';
@@ -21,6 +19,11 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TwoFactorGuard } from './guards/two-factor.guard';
 import { TwoFactorAuthStrategy } from './strategies/2fa.strategy';
+import { RedisService } from '@liaoliaots/nestjs-redis';
+import { LocalFileService } from 'src/common/local-file.service';
+import { clsFactory } from './helpers/cls-store.factory';
+import { githubStrategyProxyFactory } from './helpers/github-strategy.factory';
+import { googleStrategyProxyFactory } from './helpers/google-strategy.factory';
 
 @Module({
   imports: [
@@ -32,20 +35,20 @@ import { TwoFactorAuthStrategy } from './strategies/2fa.strategy';
     }),
     HttpModule.register({}),
     RequestScopeModule,
+    ClsModule.forRootAsync({
+      useFactory: clsFactory,
+      inject: [RedisService, LocalFileService, ConfigService],
+    }),
     ClsModule.forFeatureAsync({
       provide: 'GITHUB_STRATEGY',
       imports: [UserModule],
-      useFactory: (clsService: ClsService, userService: UserService) => {
-        return new GithubStrategy(clsService, userService);
-      },
+      useFactory: githubStrategyProxyFactory,
       inject: [ClsService, UserService],
     }),
     ClsModule.forFeatureAsync({
       provide: 'GOOGLE_STRATEGY',
       imports: [UserModule],
-      useFactory: (clsService: ClsService, userService: UserService) => {
-        return new GoogleStrategy(clsService, userService);
-      },
+      useFactory: googleStrategyProxyFactory,
       inject: [ClsService, UserService],
     }),
   ],
