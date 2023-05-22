@@ -15,10 +15,10 @@ import { GithubGuard } from '../guards/github.guard';
 import { GoogleGuard } from '../guards/google.guard';
 import { JwtGuard } from '../guards/jwt.guard';
 import { ZodValidationPipe } from '@anatine/zod-nestjs';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 import { IJWTClaims } from '../interfaces/jwt-claims.interface';
 import { ClsService } from 'nestjs-cls';
-import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserDocument } from 'src/auth/schemas/user.schema';
 import { TwoFactorGuard } from '../guards/two-factor.guard';
 
 @Controller('auth')

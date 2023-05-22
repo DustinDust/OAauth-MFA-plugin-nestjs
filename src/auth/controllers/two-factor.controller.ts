@@ -15,7 +15,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
-import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserDocument } from 'src/auth/schemas/user.schema';
 import { Verify2FATokenDto } from '../dtos/verify-2fa-token.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { TwoFactorGuard } from '../guards/two-factor.guard';

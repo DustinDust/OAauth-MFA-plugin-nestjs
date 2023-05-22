@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { authenticator } from 'otplib';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';
 

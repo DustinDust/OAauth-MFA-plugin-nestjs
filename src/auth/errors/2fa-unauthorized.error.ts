@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserDocument } from 'src/auth/schemas/user.schema';
 
 export class TwoFactorUnauthorizedExeption extends UnauthorizedException {
   user: UserDocument;

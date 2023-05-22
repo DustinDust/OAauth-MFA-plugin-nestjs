@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ClsService } from 'nestjs-cls';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 import { IJWTClaims } from '../interfaces/jwt-claims.interface';
 
 function fromCookies(req: Request) {
