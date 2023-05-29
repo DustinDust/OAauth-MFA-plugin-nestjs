@@ -6,11 +6,11 @@ export type AuthenticatorDocument = HydratedDocument<Authenticator>;
 
 @Schema({ timestamps: true })
 export class Authenticator {
-  @Prop({ type: Buffer })
-  credentialID: Uint8Array;
+  @Prop()
+  credentialID: Buffer;
 
   @Prop({ type: Buffer })
-  credentialPublicKey: Uint8Array;
+  credentialPublicKey: Buffer;
 
   @Prop()
   counter: number;

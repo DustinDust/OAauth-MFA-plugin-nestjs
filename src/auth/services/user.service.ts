@@ -24,6 +24,7 @@ export class UserService {
       })
       .populate('otp')
       .populate('providers')
+      .populate('authenticators')
       .exec();
     return us;
   }

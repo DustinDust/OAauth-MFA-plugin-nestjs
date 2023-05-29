@@ -22,11 +22,12 @@ import {
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import {
   AuthenticationResponseJSON,
+  PublicKeyCredentialDescriptorFuture,
   RegistrationResponseJSON,
 } from '@simplewebauthn/typescript-types';
 import base64url from 'base64url';
 import { Request } from 'express';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { UserService } from 'src/auth/services/user.service';
 import { JwtGuard } from '../guards/jwt.guard';
 import { type IJWTClaims } from '../interfaces/jwt-claims.interface';
@@ -35,9 +36,9 @@ import { Authenticator } from '../schemas/authenticator.schema';
 @Controller('/webauthn')
 export class WebAuthnController {
   config = {
-    rpName: 'DemoWebAutnApp',
+    rpName: 'WebauthnTest',
     rpID: 'localhost',
-    origin: `http://locahost`,
+    origin: `http://localhost:5173`,
   };
   constructor(
     private redisService: RedisService,
@@ -53,12 +54,14 @@ export class WebAuthnController {
     const user = await this.userService.getUserById(userId);
     const userAuthenticators: Authenticator[] = user.authenticators;
     const options = generateRegistrationOptions({
-      ...this.config,
+      rpID: this.config.rpID,
+      rpName: this.config.rpName,
       userID: user._id.toString(),
-      userName: user.displayName,
+      userName: user.email,
+      userDisplayName: user.displayName,
       attestationType: 'none',
       excludeCredentials: userAuthenticators.map((authenticator) => ({
-        id: authenticator.credentialID,
+        id: Buffer.from(authenticator.credentialID),
         type: 'public-key',
         transports: authenticator.transports,
       })),
@@ -75,6 +78,9 @@ export class WebAuthnController {
     @Req() req: Request,
     @Body() body: RegistrationResponseJSON,
   ) {
+    if (!body) {
+      throw new BadRequestException();
+    }
     const { id: userID } = req.user as IJWTClaims;
     const registrationChallenge = await this.redisService
       .getClient()
@@ -102,13 +108,14 @@ export class WebAuthnController {
       credentialDeviceType,
       credentialBackedUp,
     } = registrationInfo;
-    const authenticator: Authenticator = new this.authenticatorModel({
+    const authenticator = new this.authenticatorModel({
       counter,
       credentialBackedUp,
       credentialDeviceType,
-      credentialID,
-      credentialPublicKey,
+      credentialID: Buffer.from(credentialID),
+      credentialPublicKey: Buffer.from(credentialPublicKey),
     });
+    await authenticator.save();
     await this.userService.saveNewAuthenticator(userID, authenticator);
     return verification;
   }
@@ -121,13 +128,14 @@ export class WebAuthnController {
     const opts: GenerateAuthenticationOptionsOpts = {
       timeout: 60000,
       allowCredentials: user.authenticators.map((dev) => {
-        return {
-          id: dev.credentialID,
+        const ac: PublicKeyCredentialDescriptorFuture = {
+          id: new Uint8Array(dev.credentialID),
           type: 'public-key',
           transports: dev.transports,
         };
+        return ac;
       }),
-      userVerification: 'required',
+      userVerification: 'preferred',
       rpID: this.config.rpID,
     };
     const options = generateAuthenticationOptions(opts);
@@ -143,6 +151,9 @@ export class WebAuthnController {
     @Body() body: AuthenticationResponseJSON,
     @Req() request: Request,
   ) {
+    if (!body) {
+      throw new BadRequestException();
+    }
     const { id: userID } = request.user as IJWTClaims;
     const user = await this.userService.getUserById(userID);
     const challenge = await this.redisService
@@ -152,9 +163,13 @@ export class WebAuthnController {
       throw new BadRequestException();
     }
     const bodyCredIDBuffer = base64url.toBuffer(body.rawId);
-    const dbAuthenticator = user.authenticators.find((dev) => {
-      isoUint8Array.areEqual(dev.credentialID, bodyCredIDBuffer);
-    });
+    const dbAuthenticator: Authenticator & { _id: mongoose.Types.ObjectId } =
+      user.authenticators.find((dev) => {
+        isoUint8Array.areEqual(dev.credentialID, bodyCredIDBuffer);
+      }) as unknown as Authenticator & { _id: mongoose.Types.ObjectId };
+    const authenticatorDocument = await this.authenticatorModel.findById(
+      dbAuthenticator._id,
+    );
     if (!dbAuthenticator) {
       throw new BadRequestException('Authenticator not registered!');
     }
@@ -165,7 +180,10 @@ export class WebAuthnController {
         expectedChallenge: challenge,
         expectedOrigin: this.config.origin,
         expectedRPID: this.config.rpID,
-        authenticator: dbAuthenticator,
+        authenticator: {
+          ...dbAuthenticator,
+          credentialID: dbAuthenticator.credentialID,
+        },
         requireUserVerification: true,
       };
       verification = await verifyAuthenticationResponse(opts);
@@ -174,8 +192,9 @@ export class WebAuthnController {
     }
     const { verified, authenticationInfo } = verification;
     if (verified) {
-      dbAuthenticator.counter = authenticationInfo.newCounter;
+      authenticatorDocument.counter = authenticationInfo.newCounter;
     }
+    await authenticatorDocument.save();
     await user.save();
     await this.redisService.getClient().del(`challenge_${user._id.toString()}`);
     return { verified };
