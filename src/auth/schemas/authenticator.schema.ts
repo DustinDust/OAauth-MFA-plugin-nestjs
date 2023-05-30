@@ -6,7 +6,7 @@ export type AuthenticatorDocument = HydratedDocument<Authenticator>;
 
 @Schema({ timestamps: true })
 export class Authenticator {
-  @Prop()
+  @Prop({ type: Buffer })
   credentialID: Buffer;
 
   @Prop({ type: Buffer })
@@ -22,7 +22,7 @@ export class Authenticator {
   credentialBackedUp: boolean;
 
   @Prop({ type: [{ enum: ['ble', 'hybrid', 'internal', 'nfc', 'usb'] }] })
-  transports?: AuthenticatorTransport[];
+  transports?: string[];
 }
 
 export const AuthenticatorSchema = SchemaFactory.createForClass(Authenticator);

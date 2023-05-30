@@ -22,6 +22,7 @@ import {
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
 import {
   AuthenticationResponseJSON,
+  AuthenticatorTransport,
   PublicKeyCredentialDescriptorFuture,
   RegistrationResponseJSON,
 } from '@simplewebauthn/typescript-types';
@@ -40,6 +41,7 @@ export class WebAuthnController {
     rpID: 'localhost',
     origin: `http://localhost:5173`,
   };
+
   constructor(
     private redisService: RedisService,
     private userService: UserService,
@@ -63,7 +65,7 @@ export class WebAuthnController {
       excludeCredentials: userAuthenticators.map((authenticator) => ({
         id: Buffer.from(authenticator.credentialID),
         type: 'public-key',
-        transports: authenticator.transports,
+        transports: authenticator.transports as AuthenticatorTransport[],
       })),
     });
     this.redisService
@@ -129,9 +131,9 @@ export class WebAuthnController {
       timeout: 60000,
       allowCredentials: user.authenticators.map((dev) => {
         const ac: PublicKeyCredentialDescriptorFuture = {
-          id: new Uint8Array(dev.credentialID),
+          id: Uint8Array.from(dev.credentialID),
           type: 'public-key',
-          transports: dev.transports,
+          transports: dev.transports as AuthenticatorTransport[],
         };
         return ac;
       }),
@@ -183,6 +185,7 @@ export class WebAuthnController {
         authenticator: {
           ...dbAuthenticator,
           credentialID: dbAuthenticator.credentialID,
+          transports: dbAuthenticator.transports as AuthenticatorTransport[],
         },
         requireUserVerification: true,
       };

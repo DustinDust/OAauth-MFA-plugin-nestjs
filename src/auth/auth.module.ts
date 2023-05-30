@@ -19,7 +19,7 @@ import { join } from 'path';
 import { TwoFactorGuard } from './guards/two-factor.guard';
 import { TwoFactorAuthStrategy } from './strategies/2fa.strategy';
 import { RedisModule, RedisService } from '@liaoliaots/nestjs-redis';
-import { LocalFileService } from 'src/common/local-file.service';
+import { LocalFileService } from 'src/auth/services/local-file.service';
 import { clsFactory } from './helpers/cls-store.factory';
 import { githubStrategyProxyFactory } from './helpers/github-strategy.factory';
 import { googleStrategyProxyFactory } from './helpers/google-strategy.factory';
@@ -109,6 +109,7 @@ import {
     AuthService,
     TwoFactorAuthenticationService,
     UserService,
+    LocalFileService,
   ],
   exports: [UserService],
 })
