@@ -72,6 +72,7 @@ import {
     RequestScopeModule,
     ClsModule.forRootAsync({
       useFactory: clsFactory,
+      imports: [AuthModule],
       inject: [RedisService, LocalFileService, ConfigService],
     }),
     ClsModule.forFeatureAsync({
@@ -111,6 +112,6 @@ import {
     UserService,
     LocalFileService,
   ],
-  exports: [UserService],
+  exports: [UserService, LocalFileService],
 })
 export class AuthModule {}

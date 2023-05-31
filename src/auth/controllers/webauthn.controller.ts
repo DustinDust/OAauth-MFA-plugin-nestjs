@@ -4,6 +4,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
   Post,
   Req,
   UseGuards,
@@ -62,6 +63,9 @@ export class WebAuthnController {
       userName: user.email,
       userDisplayName: user.displayName,
       attestationType: 'none',
+      authenticatorSelection: {
+        residentKey: 'discouraged',
+      },
       excludeCredentials: userAuthenticators.map((authenticator) => ({
         id: Buffer.from(authenticator.credentialID),
         type: 'public-key',
@@ -167,7 +171,7 @@ export class WebAuthnController {
     const bodyCredIDBuffer = base64url.toBuffer(body.rawId);
     const dbAuthenticator: Authenticator & { _id: mongoose.Types.ObjectId } =
       user.authenticators.find((dev) => {
-        isoUint8Array.areEqual(dev.credentialID, bodyCredIDBuffer);
+        return isoUint8Array.areEqual(dev.credentialID, bodyCredIDBuffer);
       }) as unknown as Authenticator & { _id: mongoose.Types.ObjectId };
     const authenticatorDocument = await this.authenticatorModel.findById(
       dbAuthenticator._id,
@@ -183,7 +187,8 @@ export class WebAuthnController {
         expectedOrigin: this.config.origin,
         expectedRPID: this.config.rpID,
         authenticator: {
-          ...dbAuthenticator,
+          credentialPublicKey: dbAuthenticator.credentialPublicKey,
+          counter: dbAuthenticator.counter,
           credentialID: dbAuthenticator.credentialID,
           transports: dbAuthenticator.transports as AuthenticatorTransport[],
         },
@@ -191,7 +196,8 @@ export class WebAuthnController {
       };
       verification = await verifyAuthenticationResponse(opts);
     } catch (error) {
-      throw new BadRequestException(error);
+      console.log(error);
+      throw new HttpException('Some error', 400, { cause: error });
     }
     const { verified, authenticationInfo } = verification;
     if (verified) {

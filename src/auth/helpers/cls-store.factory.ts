@@ -2,7 +2,7 @@ import { RedisService } from '@liaoliaots/nestjs-redis';
 import { LoggerService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClsModuleFactoryOptions } from 'nestjs-cls';
-import { LocalFileService } from 'src/common/local-file.service';
+import { LocalFileService } from 'src/auth/services/local-file.service';
 import { IClsStore } from '../interfaces/cls-store.interface';
 import { clsZod } from './cls-store.zod';
 
