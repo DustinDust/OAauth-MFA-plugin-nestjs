@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ClsMiddleware } from 'nestjs-cls';
-import { LocalFileService } from 'src/common/local-file.service';
+import { LocalFileService } from '../services/local-file.service';
 import { IClsStore } from '../interfaces/cls-store.interface';
 
 @Injectable()

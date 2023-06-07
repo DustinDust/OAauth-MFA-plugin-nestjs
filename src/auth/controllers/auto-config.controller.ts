@@ -1,6 +1,6 @@
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Body, Controller, Get, Post, UsePipes } from '@nestjs/common';
-import { LocalFileService } from 'src/common/local-file.service';
+import { LocalFileService } from 'src/auth/services/local-file.service';
 import { UpdateAuthConfigDto } from '../dtos/update-auth-config.dto';
 import { IClsStore } from '../interfaces/cls-store.interface';
 import { Redis } from 'ioredis';

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { authenticator } from 'otplib';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';
 
@@ -21,7 +21,7 @@ export class TwoFactorAuthenticationService {
     if (!user) {
       throw new UnauthorizedException();
     }
-    if (!user.isOtpEnabled || !user.otp) {
+    if (!user.isMfaEnabled || !user.otp) {
       throw new ForbiddenException();
     }
     const otpAuthUrl = authenticator.keyuri(
@@ -65,13 +65,5 @@ export class TwoFactorAuthenticationService {
       token: token,
       secret: user.otp.secret,
     });
-  }
-
-  async disable2FAForUser(id: string) {
-    return await this.userService.disableOtp(id);
-  }
-
-  async enableOtpForUser(id: string) {
-    return await this.userService.enableOtp(id);
   }
 }

@@ -15,11 +15,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
-import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserDocument } from 'src/auth/schemas/user.schema';
 import { Verify2FATokenDto } from '../dtos/verify-2fa-token.dto';
 import { JwtGuard } from '../guards/jwt.guard';
 import { TwoFactorGuard } from '../guards/two-factor.guard';
 import { IJWTClaims } from '../interfaces/jwt-claims.interface';
+import { AuthService } from '../services/auth.service';
 import { TwoFactorAuthenticationService } from '../services/otp.service';
 
 @Controller('2fa')
@@ -27,6 +28,7 @@ import { TwoFactorAuthenticationService } from '../services/otp.service';
 export class TwoFactorController {
   constructor(
     private readonly tfaService: TwoFactorAuthenticationService,
+    private authService: AuthService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -41,7 +43,7 @@ export class TwoFactorController {
     if (!user) {
       throw new UnauthorizedException();
     }
-    this.tfaService.disable2FAForUser(user._id.toString());
+    this.authService.disable2FAForUser(user._id.toString());
     return { success: true, message: 'ok' };
   }
 
@@ -79,7 +81,7 @@ export class TwoFactorController {
     if (!isValid) {
       throw new UnauthorizedException('Wrong authentication code');
     }
-    await this.tfaService.enableOtpForUser((req.user as IJWTClaims).id);
+    await this.authService.enable2FAForUser((req.user as IJWTClaims).id);
     const accessTokenCookie = await this.jwtService.signAsync(
       {
         id: (req.user as IJWTClaims).id,

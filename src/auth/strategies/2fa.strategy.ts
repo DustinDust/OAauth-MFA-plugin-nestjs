@@ -4,16 +4,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ClsService } from 'nestjs-cls';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
+import { UnauthorizedRedirectException } from '../errors/unauthorized-redirect.exception';
+import { fromCookies } from '../helpers';
+import { IClsStore } from '../interfaces/cls-store.interface';
 import { IJWTClaims } from '../interfaces/jwt-claims.interface';
-
-function fromCookies(req: Request) {
-  let token = undefined;
-  if (req && req.cookies) {
-    token = req.cookies['jwt'];
-  }
-  return token;
-}
 
 @Injectable()
 export class TwoFactorAuthStrategy extends PassportStrategy(Strategy, '2fa') {
@@ -34,14 +29,37 @@ export class TwoFactorAuthStrategy extends PassportStrategy(Strategy, '2fa') {
     if (payload.is2FAuthenticated) {
       return user;
     }
-    if (!user.isOtpEnabled) {
-      if (this.clsService.get('mfaEnforce')) {
-        req.res.redirect(`/2fa/setup/${user._id}`);
-      } else return user;
-    } else if (user.otp) {
-      req.res.redirect(`/2fa/authenticate/${user._id}`);
-    } else {
-      req.res.redirect(`/2fa/setup/${user._id}`);
+    const currentConfig = this.clsService.get<IClsStore>();
+    if (user.isMfaEnabled || currentConfig.mfaEnforce) {
+      if (currentConfig.mfaType === 'otp') {
+        if (user.otp) {
+          throw new UnauthorizedRedirectException(
+            user,
+            `/otp/authenticate/${user._id}`,
+            '2FA required',
+          );
+        } else {
+          throw new UnauthorizedRedirectException(
+            user,
+            `/otp/setup/${user._id}`,
+            '2FA setup required',
+          );
+        }
+      } else {
+        if (user.authenticators && user.authenticators.length > 0) {
+          throw new UnauthorizedRedirectException(
+            user,
+            `/webauthn/authenticate/${user._id}`,
+            'Webauthn required',
+          );
+        } else {
+          throw new UnauthorizedRedirectException(
+            user,
+            `/webauthn/register/${user._id}`,
+            'Webauthn regsitration required',
+          );
+        }
+      }
     }
     return;
   }

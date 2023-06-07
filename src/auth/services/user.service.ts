@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
-import { CreateUserDto } from './dtos/create-user.z';
-import { ProviderInfo } from './schemas/provider-info.schema';
-import { CreateProviderInfoDto } from './dtos/create-provider-info.z';
-import { OtpInfo } from './schemas/otp-info.schema';
+import { User } from '../schemas/user.schema';
+import { CreateUserDto } from '../dtos/create-user.z';
+import { ProviderInfo } from '../schemas/provider-info.schema';
+import { CreateProviderInfoDto } from '../dtos/create-provider-info.z';
+import { OtpInfo } from '../schemas/otp-info.schema';
+import { Authenticator } from '../schemas/authenticator.schema';
 
 @Injectable()
 export class UserService {
@@ -23,6 +24,7 @@ export class UserService {
       })
       .populate('otp')
       .populate('providers')
+      .populate('authenticators')
       .exec();
     return us;
   }
@@ -58,10 +60,10 @@ export class UserService {
       .exec();
   }
 
-  async enableOtp(id: string) {
+  async enableMfa(id: string) {
     return await this.userModel.findByIdAndUpdate(id, {
       $set: {
-        isOtpEnabled: true,
+        isMfaEnabled: true,
       },
     });
   }
@@ -69,9 +71,15 @@ export class UserService {
   async disableOtp(id: string) {
     return await this.userModel.findByIdAndUpdate(id, {
       $set: {
-        isOtpEnabled: false,
+        isMfaEnabled: false,
       },
     });
+  }
+
+  async saveNewAuthenticator(id: string, authenticator: Authenticator) {
+    const user = await this.userModel.findById(id);
+    user.authenticators = [...user.authenticators, authenticator];
+    return await user.save();
   }
 
   async findUserByProviderId(id: string, provider: string) {

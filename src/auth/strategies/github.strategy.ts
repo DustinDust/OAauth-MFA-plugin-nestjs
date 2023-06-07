@@ -2,7 +2,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ClsService, InjectableProxy } from 'nestjs-cls';
 import { Strategy } from 'passport-github2';
 import { Profile } from 'passport-github2';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 
 @InjectableProxy()
 export class GithubStrategy extends PassportStrategy(Strategy, 'github-oauth') {

@@ -2,7 +2,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ClsService, InjectableProxy } from 'nestjs-cls';
 import { Profile } from 'passport-github2';
 import { OAuth2Strategy } from 'passport-google-oauth';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/auth/services/user.service';
 
 @InjectableProxy()
 export class GoogleStrategy extends PassportStrategy(

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { Authenticator } from 'src/auth/schemas/authenticator.schema';
 import { OtpInfo } from './otp-info.schema';
 import { ProviderInfo } from './provider-info.schema';
 
@@ -22,13 +23,18 @@ export class User {
   providers: ProviderInfo[];
 
   @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Authenticator' }],
+  })
+  authenticators: Authenticator[];
+
+  @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'OtpInfo',
   })
   otp: OtpInfo;
 
   @Prop()
-  isOtpEnabled: boolean;
+  isMfaEnabled: boolean;
 
   @Prop()
   createdAt: string;

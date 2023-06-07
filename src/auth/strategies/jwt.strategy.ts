@@ -1,15 +1,8 @@
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-
-function fromCookies(req: Request) {
-  let token = undefined;
-  if (req && req.cookies) {
-    token = req.cookies['jwt'];
-  }
-  return token;
-}
+import { fromCookies } from '../helpers';
+import { IJWTClaims } from '../interfaces/jwt-claims.interface';
 
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
@@ -19,7 +12,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload) {
+  async validate(payload: IJWTClaims) {
+    console.log(payload);
     return payload;
   }
 }
