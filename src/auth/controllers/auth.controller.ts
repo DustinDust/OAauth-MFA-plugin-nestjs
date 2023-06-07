@@ -4,6 +4,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseFilters,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -20,9 +21,12 @@ import { IJWTClaims } from '../interfaces/jwt-claims.interface';
 import { ClsService } from 'nestjs-cls';
 import { UserDocument } from 'src/auth/schemas/user.schema';
 import { TwoFactorGuard } from '../guards/two-factor.guard';
+import { IClsStore } from '../interfaces/cls-store.interface';
+import { UnauthorizedRedirectExceptionFilter } from '../filters/UnauthorizedRedirect.filter';
 
 @Controller('auth')
 @UsePipes(ZodValidationPipe)
+@UseFilters(new UnauthorizedRedirectExceptionFilter())
 export class AuthController {
   constructor(
     private jwtService: JwtService,
@@ -62,22 +66,37 @@ export class AuthController {
       },
     );
     res.cookie('jwt', jwt);
-    if (this.clsService.get('mfaEnforce')) {
-      if (user.isOtpEnabled && user.otp) {
-        res.redirect(`/2fa/authenticate/${user._id}`);
-      } else if (!(user.otp && user.isOtpEnabled)) {
-        res.redirect(`/2fa/setup/${user._id}`);
+    const currentConfig = this.clsService.get<IClsStore>();
+    if (currentConfig.mfaEnforce) {
+      if (currentConfig.mfaType === 'otp') {
+        if (user.otp) {
+          res.redirect(`/otp/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/otp/setup/${user._id}`);
+        }
+      } else if (currentConfig.mfaType === 'webauthn') {
+        if (user.authenticators && user.authenticators.length > 0) {
+          res.redirect(`/webauthn/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/webauthn/register/${user._id}`);
+        }
+      }
+    } else if (user.isMfaEnabled) {
+      if (currentConfig.mfaType === 'otp') {
+        if (user.otp) {
+          res.redirect(`/otp/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/otp/setup/${user._id}`);
+        }
+      } else if (currentConfig.mfaType === 'webauthn') {
+        if (user.authenticators && user.authenticators.length > 0) {
+          res.redirect(`/webauthn/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/webauthn/register/${user._id}`);
+        }
       }
     } else {
-      if (user.isOtpEnabled) {
-        if (user.otp) {
-          res.redirect(`/2fa/authenticate/${user._id}`);
-        } else {
-          res.redirect(`/2fa/setup/${user._id}`);
-        }
-      } else {
-        res.redirect('/');
-      }
+      res.redirect('/');
     }
   }
 
@@ -101,23 +120,56 @@ export class AuthController {
       },
     );
     res.cookie('jwt', jwt);
-    if (this.clsService.get('mfaEnforce')) {
-      if (user.otp) {
-        res.redirect(`/2fa/authenticate/${user._id}`);
-      } else {
-        res.redirect(`/2fa/setup/${user._id}`);
+    const currentConfig = this.clsService.get<IClsStore>();
+    if (currentConfig.mfaEnforce) {
+      if (currentConfig.mfaType === 'otp') {
+        if (user.otp) {
+          res.redirect(`/otp/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/otp/setup/${user._id}`);
+        }
+      } else if (currentConfig.mfaType === 'webauthn') {
+        if (user.authenticators && user.authenticators.length > 0) {
+          res.redirect(`/webauthn/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/webauthn/register/${user._id}`);
+        }
+      }
+    } else if (user.isMfaEnabled) {
+      if (currentConfig.mfaType === 'otp') {
+        if (user.otp) {
+          res.redirect(`/otp/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/otp/setup/${user._id}`);
+        }
+      } else if (currentConfig.mfaType === 'webauthn') {
+        if (user.authenticators && user.authenticators.length > 0) {
+          res.redirect(`/webauthn/authenticate/${user._id}`);
+        } else {
+          res.redirect(`/webauthn/register/${user._id}`);
+        }
       }
     } else {
-      if (user.isOtpEnabled) {
-        if (user.otp) {
-          res.redirect(`/2fa/authenticate/${user._id}`);
-        } else {
-          res.redirect(`/2fa/setup/${user._id}`);
-        }
-      } else {
-        res.redirect('/');
-      }
+      res.redirect('/');
     }
+  }
+
+  @Get('user-basic')
+  @UseGuards(JwtGuard)
+  async getBasicUserInfo(@Req() req) {
+    if (!req.user) {
+      throw new UnauthorizedException();
+    }
+    const user = await this.userService.getUserById(
+      (req.user as IJWTClaims).id,
+    );
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    delete user.otp;
+    delete user.authenticators;
+    delete user.providers;
+    return user;
   }
 
   @Get('test')
@@ -133,6 +185,8 @@ export class AuthController {
       throw new UnauthorizedException();
     }
     delete user.otp;
+    delete user.authenticators;
+    delete user.providers;
     return user;
   }
 }

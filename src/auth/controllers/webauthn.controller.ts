@@ -5,10 +5,14 @@ import {
   Controller,
   Get,
   HttpException,
+  HttpStatus,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   generateAuthenticationOptions,
@@ -28,33 +32,42 @@ import {
   RegistrationResponseJSON,
 } from '@simplewebauthn/typescript-types';
 import base64url from 'base64url';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import mongoose, { Model } from 'mongoose';
+import { ClsService } from 'nestjs-cls';
 import { UserService } from 'src/auth/services/user.service';
 import { JwtGuard } from '../guards/jwt.guard';
+import { IWebauthnConfig } from '../interfaces/cls-store.interface';
 import { type IJWTClaims } from '../interfaces/jwt-claims.interface';
 import { Authenticator } from '../schemas/authenticator.schema';
 
 @Controller('/webauthn')
 export class WebAuthnController {
-  config = {
-    rpName: 'WebauthnTest',
-    rpID: 'localhost',
-    origin: `http://localhost:5173`,
-  };
-
+  config: IWebauthnConfig;
   constructor(
     private redisService: RedisService,
     private userService: UserService,
+    private clsService: ClsService,
     @InjectModel(Authenticator.name)
     private authenticatorModel: Model<Authenticator>,
-  ) {}
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {
+    this.config = this.clsService.get('webAuthnConfig');
+  }
 
   @UseGuards(JwtGuard)
   @Get('generate-registration-options')
   async generateRegistration(@Req() req: Request) {
+    this.config = this.clsService.get('webAuthnConfig');
     const { id: userId } = req.user as IJWTClaims;
     const user = await this.userService.getUserById(userId);
+    if (!user) {
+      throw new HttpException(
+        `No user with id of ${userId} exists.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const userAuthenticators: Authenticator[] = user.authenticators;
     const options = generateRegistrationOptions({
       rpID: this.config.rpID,
@@ -84,6 +97,7 @@ export class WebAuthnController {
     @Req() req: Request,
     @Body() body: RegistrationResponseJSON,
   ) {
+    this.config = this.clsService.get('webAuthnConfig');
     if (!body) {
       throw new BadRequestException();
     }
@@ -123,14 +137,22 @@ export class WebAuthnController {
     });
     await authenticator.save();
     await this.userService.saveNewAuthenticator(userID, authenticator);
-    return verification;
+    await this.redisService.getClient().del(`challenge_${userID}`);
+    return { ok: verification.verified };
   }
 
   @Get('/generate-authentication-options')
   @UseGuards(JwtGuard)
   async generateAuthentication(@Req() req: Request) {
+    this.config = this.clsService.get('webAuthnConfig');
     const { id: userID } = req.user as IJWTClaims;
     const user = await this.userService.getUserById(userID);
+    if (!user) {
+      throw new HttpException(
+        `No user with id of ${userID} exists.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const opts: GenerateAuthenticationOptionsOpts = {
       timeout: 60000,
       allowCredentials: user.authenticators.map((dev) => {
@@ -156,12 +178,20 @@ export class WebAuthnController {
   async verifyAuthentication(
     @Body() body: AuthenticationResponseJSON,
     @Req() request: Request,
+    @Res() res: Response,
   ) {
+    this.config = this.clsService.get('webAuthnConfig');
     if (!body) {
       throw new BadRequestException();
     }
     const { id: userID } = request.user as IJWTClaims;
     const user = await this.userService.getUserById(userID);
+    if (!user) {
+      throw new HttpException(
+        `No user with id of ${userID} exists.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const challenge = await this.redisService
       .getClient()
       .get(`challenge_${user._id.toString()}`);
@@ -197,7 +227,9 @@ export class WebAuthnController {
       verification = await verifyAuthenticationResponse(opts);
     } catch (error) {
       console.log(error);
-      throw new HttpException('Some error', 400, { cause: error });
+      throw new HttpException('Errors while verifying authentication', 400, {
+        cause: error,
+      });
     }
     const { verified, authenticationInfo } = verification;
     if (verified) {
@@ -206,6 +238,16 @@ export class WebAuthnController {
     await authenticatorDocument.save();
     await user.save();
     await this.redisService.getClient().del(`challenge_${user._id.toString()}`);
-    return { verified };
+    const jwtPayload: IJWTClaims = {
+      id: user._id.toString(),
+      is2FAuthenticated: verified,
+    };
+    res.cookie(
+      'jwt',
+      await this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.get('JWT_SECRET'),
+      }),
+    );
+    res.send({ ok: verified });
   }
 }

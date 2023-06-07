@@ -1,5 +1,5 @@
 import { RedisService } from '@liaoliaots/nestjs-redis';
-import { LoggerService } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClsModuleFactoryOptions } from 'nestjs-cls';
 import { LocalFileService } from 'src/auth/services/local-file.service';
@@ -12,8 +12,8 @@ export const clsFactory: (
   redisService: RedisService,
   localFileService: LocalFileService,
   configService: ConfigService,
-  logger: LoggerService,
 ) => {
+  const logger = new Logger();
   return {
     middleware: {
       mount: true,
@@ -28,6 +28,7 @@ export const clsFactory: (
           const data = await localFileService.dataFromFile<IClsStore>(
             `${process.cwd()}/cls.json`,
           );
+          console.log(data);
           let zodParsedData;
           try {
             zodParsedData = clsZod.parse(data);

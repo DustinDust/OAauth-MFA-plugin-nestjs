@@ -60,10 +60,10 @@ export class UserService {
       .exec();
   }
 
-  async enableOtp(id: string) {
+  async enableMfa(id: string) {
     return await this.userModel.findByIdAndUpdate(id, {
       $set: {
-        isOtpEnabled: true,
+        isMfaEnabled: true,
       },
     });
   }
@@ -71,7 +71,7 @@ export class UserService {
   async disableOtp(id: string) {
     return await this.userModel.findByIdAndUpdate(id, {
       $set: {
-        isOtpEnabled: false,
+        isMfaEnabled: false,
       },
     });
   }

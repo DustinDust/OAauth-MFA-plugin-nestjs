@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { UserService } from './user.service';
 
 @Injectable()
 export class AuthService {
   GITHUB_USER_ENDPOINT = 'https://api.github.com/user';
   GOOGLE_USER_ENDPOINT = 'https://www.googleapis.com/oauth2/v1/userinfo';
+  constructor(private userService: UserService) {}
+
   async getUserInfo(accessToken: string, provider: 'google' | 'github') {
     if (provider === 'github') {
       const res = await axios.get(this.GITHUB_USER_ENDPOINT, {
@@ -40,5 +43,12 @@ export class AuthService {
         provider: provider,
       };
     }
+  }
+  async disable2FAForUser(id: string) {
+    return await this.userService.disableOtp(id);
+  }
+
+  async enable2FAForUser(id: string) {
+    return await this.userService.enableMfa(id);
   }
 }

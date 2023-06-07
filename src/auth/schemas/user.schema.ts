@@ -34,7 +34,7 @@ export class User {
   otp: OtpInfo;
 
   @Prop()
-  isOtpEnabled: boolean;
+  isMfaEnabled: boolean;
 
   @Prop()
   createdAt: string;

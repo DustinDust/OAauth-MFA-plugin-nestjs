@@ -21,7 +21,11 @@ export class Authenticator {
   @Prop()
   credentialBackedUp: boolean;
 
-  @Prop({ type: [{ enum: ['ble', 'hybrid', 'internal', 'nfc', 'usb'] }] })
+  @Prop({
+    type: [
+      { enum: ['ble', 'hybrid', 'internal', 'nfc', 'usb'], type: [String] },
+    ],
+  })
   transports?: string[];
 }
 
