@@ -1,20 +1,34 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { authenticator } from 'otplib';
 import { UserService } from 'src/auth/services/user.service';
 import { toFileStream } from 'qrcode';
 import { Response } from 'express';
+import {
+  AuthModuleOptions,
+  MODULE_OPTIONS_TOKEN,
+  OPTIONS_TYPE,
+} from '../auth-dynamic.module';
+import { ConfigService } from '@nestjs/config';
+import { getConfigToken, JWT_SECRET } from '../helpers/constants';
 
 @Injectable()
 export class TwoFactorAuthenticationService {
   constructor(
     private readonly userService: UserService,
-    private readonly configService: ConfigService,
+    private configService: ConfigService,
+    @Inject(MODULE_OPTIONS_TOKEN) private authModuleConfig: AuthModuleOptions,
   ) {}
+
+  get jwtSecret() {
+    return this.configService.get(
+      getConfigToken(this.authModuleConfig.env.prefix, JWT_SECRET),
+    );
+  }
 
   async getSecret(userId: string) {
     const user = await this.userService.getUserById(userId);
@@ -26,7 +40,7 @@ export class TwoFactorAuthenticationService {
     }
     const otpAuthUrl = authenticator.keyuri(
       user.email,
-      this.configService.get('TWO_FACTOR_AUTHENTICATOR_APP_NAME'),
+      this.jwtSecret,
       user.otp.secret,
     );
     return {
@@ -39,11 +53,7 @@ export class TwoFactorAuthenticationService {
     const secret = authenticator.generateSecret();
     const user = await this.userService.getUserById(userId);
     await this.userService.updateOtpInfo(userId, secret);
-    const otpAuthUrl = authenticator.keyuri(
-      user.email,
-      this.configService.get('TWO_FACTOR_AUTHENTICATOR_APP_NAME'),
-      secret,
-    );
+    const otpAuthUrl = authenticator.keyuri(user.email, this.jwtSecret, secret);
 
     return {
       secret,

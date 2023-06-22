@@ -8,10 +8,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
-import { AuthService } from '../services/auth.service';
 import { GithubGuard } from '../guards/github.guard';
 import { GoogleGuard } from '../guards/google.guard';
 import { JwtGuard } from '../guards/jwt.guard';
@@ -23,21 +20,24 @@ import { UserDocument } from 'src/auth/schemas/user.schema';
 import { TwoFactorGuard } from '../guards/two-factor.guard';
 import { IClsStore } from '../interfaces/cls-store.interface';
 import { UnauthorizedRedirectExceptionFilter } from '../filters/UnauthorizedRedirect.filter';
+import { AuthService } from '../services/auth.service';
 
 @Controller('auth')
 @UsePipes(ZodValidationPipe)
 @UseFilters(new UnauthorizedRedirectExceptionFilter())
 export class AuthController {
   constructor(
-    private jwtService: JwtService,
-    private authService: AuthService,
-    private configService: ConfigService,
     private userService: UserService,
     private clsService: ClsService,
+    private authService: AuthService,
   ) {}
 
-  get jwtSecret() {
-    return this.configService.get('JWT_SECRET');
+  get clsConfig() {
+    return this.clsService.get<IClsStore>();
+  }
+
+  get moduleOptions() {
+    return this.authService.authModuleOptions;
   }
 
   @Get('google/login')
@@ -56,47 +56,84 @@ export class AuthController {
     @Req() req,
   ) {
     const user = req.user.user as UserDocument;
-    const jwt = await this.jwtService.signAsync(
-      {
-        id: user._id,
-        is2FAuthenticated: false,
-      },
-      {
-        secret: this.jwtSecret,
-      },
-    );
+    const jwt = await this.authService.generateJwtToken({
+      id: user._id,
+      is2FAuthenticated: false,
+    });
     res.cookie('jwt', jwt);
     const currentConfig = this.clsService.get<IClsStore>();
     if (currentConfig.mfaEnforce) {
       if (currentConfig.mfaType === 'otp') {
         if (user.otp) {
-          res.redirect(`/otp/authenticate/${user._id}`);
+          if (typeof this.authService.otpAuthenticateRedirect === 'string') {
+            res.redirect(this.authService.otpAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.otpAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/otp/setup/${user._id}`);
+          if (typeof this.authService.otpSetupRedirect === 'string') {
+            res.redirect(this.authService.otpSetupRedirect);
+          } else {
+            res.redirect(this.authService.otpSetupRedirect(user));
+          }
         }
       } else if (currentConfig.mfaType === 'webauthn') {
         if (user.authenticators && user.authenticators.length > 0) {
-          res.redirect(`/webauthn/authenticate/${user._id}`);
+          if (
+            typeof this.authService.webauthnAuthenticateRedirect === 'string'
+          ) {
+            res.redirect(this.authService.webauthnAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.webauthnAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/webauthn/register/${user._id}`);
+          if (typeof this.authService.webauthnRegisterRedirect === 'string') {
+            res.redirect(this.authService.webauthnRegisterRedirect);
+          } else {
+            res.redirect(this.authService.webauthnRegisterRedirect(user));
+          }
         }
       }
     } else if (user.isMfaEnabled) {
       if (currentConfig.mfaType === 'otp') {
         if (user.otp) {
-          res.redirect(`/otp/authenticate/${user._id}`);
+          if (typeof this.authService.otpAuthenticateRedirect === 'string') {
+            res.redirect(this.authService.otpAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.otpAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/otp/setup/${user._id}`);
+          if (typeof this.authService.otpSetupRedirect === 'string') {
+            res.redirect(this.authService.otpSetupRedirect);
+          } else {
+            res.redirect(this.authService.otpSetupRedirect(user));
+          }
         }
       } else if (currentConfig.mfaType === 'webauthn') {
         if (user.authenticators && user.authenticators.length > 0) {
-          res.redirect(`/webauthn/authenticate/${user._id}`);
+          if (
+            typeof this.authService.webauthnAuthenticateRedirect === 'string'
+          ) {
+            res.redirect(this.authService.webauthnAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.webauthnAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/webauthn/register/${user._id}`);
+          if (typeof this.authService.webauthnRegisterRedirect === 'string') {
+            res.redirect(this.authService.webauthnRegisterRedirect);
+          } else {
+            res.redirect(this.authService.webauthnRegisterRedirect(user));
+          }
         }
       }
     } else {
-      res.redirect('/');
+      if (
+        typeof this.authService.successAuthenticatedWithProvider === 'string'
+      ) {
+        res.redirect(this.authService.successAuthenticatedWithProvider);
+      } else {
+        res.redirect(this.authService.successAuthenticatedWithProvider(user));
+      }
     }
   }
 
@@ -110,47 +147,84 @@ export class AuthController {
   @UseGuards(GithubGuard)
   async githubCallback(@Res({ passthrough: true }) res: Response, @Req() req) {
     const user = req.user.user as UserDocument;
-    const jwt = await this.jwtService.signAsync(
-      {
-        id: user._id,
-        is2FAuthenticated: false,
-      },
-      {
-        secret: this.jwtSecret,
-      },
-    );
+    const jwt = await this.authService.generateJwtToken({
+      id: user._id,
+      is2FAuthenticated: false,
+    });
     res.cookie('jwt', jwt);
     const currentConfig = this.clsService.get<IClsStore>();
     if (currentConfig.mfaEnforce) {
       if (currentConfig.mfaType === 'otp') {
         if (user.otp) {
-          res.redirect(`/otp/authenticate/${user._id}`);
+          if (typeof this.authService.otpAuthenticateRedirect === 'string') {
+            res.redirect(this.authService.otpAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.otpAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/otp/setup/${user._id}`);
+          if (typeof this.authService.otpSetupRedirect === 'string') {
+            res.redirect(this.authService.otpSetupRedirect);
+          } else {
+            res.redirect(this.authService.otpSetupRedirect(user));
+          }
         }
       } else if (currentConfig.mfaType === 'webauthn') {
         if (user.authenticators && user.authenticators.length > 0) {
-          res.redirect(`/webauthn/authenticate/${user._id}`);
+          if (
+            typeof this.authService.webauthnAuthenticateRedirect === 'string'
+          ) {
+            res.redirect(this.authService.webauthnAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.webauthnAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/webauthn/register/${user._id}`);
+          if (typeof this.authService.webauthnRegisterRedirect === 'string') {
+            res.redirect(this.authService.webauthnRegisterRedirect);
+          } else {
+            res.redirect(this.authService.webauthnRegisterRedirect(user));
+          }
         }
       }
     } else if (user.isMfaEnabled) {
       if (currentConfig.mfaType === 'otp') {
         if (user.otp) {
-          res.redirect(`/otp/authenticate/${user._id}`);
+          if (typeof this.authService.otpAuthenticateRedirect === 'string') {
+            res.redirect(this.authService.otpAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.otpAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/otp/setup/${user._id}`);
+          if (typeof this.authService.otpSetupRedirect === 'string') {
+            res.redirect(this.authService.otpSetupRedirect);
+          } else {
+            res.redirect(this.authService.otpSetupRedirect(user));
+          }
         }
       } else if (currentConfig.mfaType === 'webauthn') {
         if (user.authenticators && user.authenticators.length > 0) {
-          res.redirect(`/webauthn/authenticate/${user._id}`);
+          if (
+            typeof this.authService.webauthnAuthenticateRedirect === 'string'
+          ) {
+            res.redirect(this.authService.webauthnAuthenticateRedirect);
+          } else {
+            res.redirect(this.authService.webauthnAuthenticateRedirect(user));
+          }
         } else {
-          res.redirect(`/webauthn/register/${user._id}`);
+          if (typeof this.authService.webauthnRegisterRedirect === 'string') {
+            res.redirect(this.authService.webauthnRegisterRedirect);
+          } else {
+            res.redirect(this.authService.webauthnRegisterRedirect(user));
+          }
         }
       }
     } else {
-      res.redirect('/');
+      if (
+        typeof this.authService.successAuthenticatedWithProvider === 'string'
+      ) {
+        res.redirect(this.authService.successAuthenticatedWithProvider);
+      } else {
+        res.redirect(this.authService.successAuthenticatedWithProvider(user));
+      }
     }
   }
 
