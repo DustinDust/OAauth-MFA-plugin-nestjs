@@ -11,7 +11,6 @@ import { Response } from 'express';
 import {
   AuthModuleOptions,
   MODULE_OPTIONS_TOKEN,
-  OPTIONS_TYPE,
 } from '../auth-dynamic.module';
 import { ConfigService } from '@nestjs/config';
 import { getConfigToken, JWT_SECRET } from '../helpers/constants';
@@ -71,6 +70,10 @@ export class TwoFactorAuthenticationService {
 
   async verify(userId: string, token: string) {
     const user = await this.userService.getUserById(userId);
+    if (!user || !user.otp || !user.otp.secret) {
+      throw new UnauthorizedException('Errors!');
+    }
+    console.log('User: ', user);
     return authenticator.verify({
       token: token,
       secret: user.otp.secret,

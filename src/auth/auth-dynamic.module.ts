@@ -87,7 +87,7 @@ export const {
   .build();
 
 export type AuthModuleOptions = typeof OPTIONS_TYPE;
-export type AuthModuelAsyncOptions = typeof ASYNC_OPTIONS_TYPE & {
+export type AuthModuleAsyncOptions = typeof ASYNC_OPTIONS_TYPE & {
   ENV_PREFIX?: string;
 };
 
@@ -221,7 +221,7 @@ export class AuthModule extends DynamicAuthModuleClass {
           useFactory: (
             u: UserService,
             c: ConfigService,
-            o: AuthModuleOptions,
+            o: AuthModuleOptions = options,
           ) => {
             return new TwoFactorAuthenticationService(u, c, o);
           },

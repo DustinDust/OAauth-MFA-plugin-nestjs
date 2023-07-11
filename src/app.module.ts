@@ -17,7 +17,7 @@ import { AuthModule } from './auth/auth-dynamic.module';
         redirect: {
           successAuthenticatedWithProvider: '/',
           otpAuthenticate: (user) => `/otp/authenticate/${user._id}`,
-          otpSetup: (user) => `/opt/setup/${user._id}`,
+          otpSetup: (user) => `/otp/setup/${user._id}`,
           webAuthnAuthenticate: (user) => `/webauthn/authenticate/${user._id}`,
           webAuthnRegister: (user) => `/webauthn/register/${user._id}`,
         },

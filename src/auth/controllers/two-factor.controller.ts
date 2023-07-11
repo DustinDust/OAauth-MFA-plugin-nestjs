@@ -74,7 +74,7 @@ export class TwoFactorController {
     @Body() body: Verify2FATokenDto,
     @Res() res: Response,
   ) {
-    const isValid = this.tfaService.verify(
+    const isValid = await this.tfaService.verify(
       (req.user as IJWTClaims).id,
       body.token,
     );
